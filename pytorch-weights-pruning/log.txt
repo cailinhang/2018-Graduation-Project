@@ -1,0 +1,72 @@
+Starting epoch 1 / 5
+E:\课件\past\大四\PyTorch\pytorch-weights_pruning-master\pruning\utils.py:29: UserWarning: invalid index of a 0-dim tensor. This will be an error in PyTorch 0.5. Use tensor.item() to convert a 0-dim tensor to a Python number
+  print('t = %d, loss = %.8f' % (t + 1, loss.data[0]))
+t = 100, loss = 0.35333830
+t = 200, loss = 0.35824609
+t = 300, loss = 0.15001145
+t = 400, loss = 0.09641130
+Starting epoch 2 / 5
+t = 100, loss = 0.19680943
+t = 200, loss = 0.12021865
+t = 300, loss = 0.08083647
+t = 400, loss = 0.09811574
+Starting epoch 3 / 5
+t = 100, loss = 0.11171027
+t = 200, loss = 0.10969388
+t = 300, loss = 0.03961846
+t = 400, loss = 0.04034916
+Starting epoch 4 / 5
+t = 100, loss = 0.16774568
+t = 200, loss = 0.06302222
+t = 300, loss = 0.04315410
+t = 400, loss = 0.07748500
+Starting epoch 5 / 5
+t = 100, loss = 0.04316102
+t = 200, loss = 0.06015515
+t = 300, loss = 0.02980712
+t = 400, loss = 0.08848469
+--- Pretrained network loaded ---
+E:\课件\past\大四\PyTorch\pytorch-weights_pruning-master\pruning\utils.py:13: UserWarning: volatile was removed and now has no effect. Use `with torch.no_grad():` instead.
+  return Variable(x, requires_grad=requires_grad, volatile=volatile)
+Test accuracy: 97.84% (9784/10000)
+L1_norm.shape  (200,)
+In shape: 784, Out shape 50.
+In shape: 50, Out shape 100.
+In shape: 100, Out shape 10.
+Starting epoch 1 / 5
+t = 100, loss = 0.13687299
+t = 200, loss = 0.06730886
+t = 300, loss = 0.13870466
+t = 400, loss = 0.07151565
+Starting epoch 2 / 5
+t = 100, loss = 0.10505963
+t = 200, loss = 0.06761071
+t = 300, loss = 0.04911991
+t = 400, loss = 0.04899336
+Starting epoch 3 / 5
+t = 100, loss = 0.03545716
+t = 200, loss = 0.07358687
+t = 300, loss = 0.05631604
+t = 400, loss = 0.01735966
+Starting epoch 4 / 5
+t = 100, loss = 0.02447822
+t = 200, loss = 0.02899325
+t = 300, loss = 0.03758554
+t = 400, loss = 0.03680674
+Starting epoch 5 / 5
+t = 100, loss = 0.09167306
+t = 200, loss = 0.16434172
+t = 300, loss = 0.06900648
+t = 400, loss = 0.08610600
+--- After retraining ---
+Test accuracy: 97.54% (9754/10000)
+
+net2
+Out[31]: 
+MLP(
+  (linear1): MaskedLinear(in_features=784, out_features=50, bias=True)
+  (relu1): ReLU(inplace)
+  (linear2): MaskedLinear(in_features=50, out_features=100, bias=True)
+  (relu2): ReLU(inplace)
+  (linear3): MaskedLinear(in_features=100, out_features=10, bias=True)
+)
