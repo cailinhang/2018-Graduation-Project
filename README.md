@@ -167,7 +167,7 @@ ConvNet(
 
 　　我首先对前两周阅读的论文(<a href="<https://arxiv.org/pdf/1608.08710.pdf>">Pruning Filters For Efficient Convnets</a>,  <https://arxiv.org/pdf/1608.08710.pdf>)中的网络剪枝算法在更深的网络`vgg`  和结构更复杂的网络 `resnet` 上进行代码重现。
 
-　　此外，阅读了另一篇卷积神经网络剪枝论文(<a href="<https://arxiv.org/pdf/1608.08710.pdf>">Learning Efficient Convolutional Networks through Network Slimming</a>,  链接: http://openaccess.thecvf.com/content_ICCV_2017/papers/Liu_Learning_Efficient_Convolutional_ICCV_2017_paper.pdf)，研究了 https://github.com/Eric-mingjie/rethinking-network-pruning对论文的剪枝算法在`vgg` 和 `resnet` 上重现。
+　　此外，阅读了另一篇卷积神经网络剪枝论文(<a href="<https://arxiv.org/pdf/1608.08710.pdf>">Learning Efficient Convolutional Networks through Network Slimming</a>,  链接: http://openaccess.thecvf.com/content_ICCV_2017/papers/Liu_Learning_Efficient_Convolutional_ICCV_2017_paper.pdf)，研究了 https://github.com/Eric-mingjie/rethinking-network-pruning对论文的剪枝算法在 `vgg` 和 `resnet` 上重现。
 
 #### 论文阅读
 
@@ -183,7 +183,7 @@ ConvNet(
 
 　　训练时，损失函数`L`加上`scaling factor`( $\gamma $ )的损失值$\lambda \sum_{\gamma \in \Tau} g(\gamma)$，这里定义$g(\gamma) = |\gamma|$，即`scaling factor`( $\gamma $ )的绝对值。
 
-<center><img src="images/loss_with_channel_select.png" style="zoom: 40%"></center>
+<center><img src="images/loss_with_channel_select.png" style="zoom: 20%"></center>
 
 
 
