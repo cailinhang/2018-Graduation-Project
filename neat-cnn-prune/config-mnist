@@ -1,0 +1,101 @@
+#--- parameters for the mnist experiment ---#
+
+[NEAT]
+fitness_criterion     = max
+fitness_threshold     = 0.8
+pop_size              = 10
+reset_on_extinction   = False
+
+[DefaultGenome]
+# node activation options
+activation_default      = sigmod
+activation_mutate_rate  = 0.0
+activation_options      = sigmod
+
+# node aggregation options
+aggregation_default     = sum
+aggregation_mutate_rate = 0.0
+aggregation_options     = sum
+
+# node bias options
+bias_init_mean          = 0.0
+bias_init_stdev         = 0.5
+bias_max_value          = 5.0
+bias_min_value          = -5.0
+bias_mutate_power       = 0.005
+bias_mutate_rate        = 0.05
+bias_replace_rate       = 0.01
+
+# genome compatibility options
+compatibility_disjoint_coefficient = 1.0
+compatibility_weight_coefficient   = 0.5
+
+# connection add/remove rates
+conn_add_prob           = 0.5
+conn_delete_prob        = 0.0
+
+# connection enable options
+enabled_default         = True
+enabled_mutate_rate     = 0.01
+
+feed_forward            = True
+initial_connection      = partial 0.8
+
+# node add/remove rates
+node_add_prob           = 0.5
+node_delete_prob        = 0.0
+
+# network parameters
+num_hidden              = 80
+num_inputs              = 1
+num_outputs             = 10
+full_connect_input      = True
+
+# node response options
+response_init_mean      = 1.0
+response_init_stdev     = 0.0
+response_max_value      = 5
+response_min_value      = -5.0
+response_mutate_power   = 0.0
+response_mutate_rate    = 0.0
+response_replace_rate   = 0.0
+
+# connection weight options
+weight_init_mean        = 0.0
+weight_init_stdev       = 0.5
+weight_max_value        = 5.0
+weight_min_value        = -5.0
+weight_mutate_power     = 0.005
+weight_mutate_rate      = 0.05
+weight_replace_rate     = 0.01
+
+# cnn kernal options
+kernal_init_mean        = 0.0
+kernal_init_stdev       = 0.5
+kernal_max_value        = 5.0
+kernal_min_value        = -5.0
+kernal_mutate_power     = 0.3
+kernal_mutate_rate      = 0.3
+kernal_replace_rate     = 0.2
+kernal_size             = 9
+input_channels          = 1
+
+# layer information
+# num_first_fc_layer_node can be set to 0, if the num is not fixed
+num_layer               = 7
+num_cnn_layer           = 4
+num_first_fc_layer_node = 0
+
+[DefaultSpeciesSet]
+compatibility_threshold = 3.8
+
+[DefaultStagnation]
+species_fitness_func = max
+max_stagnation       = 20
+species_elitism      = 2
+
+[DefaultReproduction]
+elitism            = 2
+survival_threshold = 0.2
+
+#crossover_rate ?
