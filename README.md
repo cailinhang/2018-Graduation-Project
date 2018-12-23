@@ -5,7 +5,7 @@
 ---
 - [项目计划](#项目计划)
 - [工作总结](#工作总结)
-  - [第七周(12.16~12.22)](#第七周(12161222))
+  - [第七周(12.16~12.22)](#第七周(12.16~12.22))
   - [第五六周(12.01~12.15)](#第五六周(12.01~12.15))
   - [第三四周(11.16~11.30)](#第三四周(11.16~11.30))
   - [第一二周(11.01~11.15)](#第一二周(11.01~11.15))
@@ -76,7 +76,7 @@ class DefaultNodeGene(BaseGene):
 　　4. 在结点基因交叉`crossover`时，增加对`kernal`的交叉。对于 `self` 的每一个卷积核`kernal[i]`，寻找`gene2`中是否有与之同源的连接，即`gene2.in_nodes[j] == self.in_nodes[i]`，对同源的`kernal[i]` 进行一定概率的交叉。
   
     ```python
-def crossover(self, gene2):
+    def crossover(self, gene2):
              """ Creates a new gene randomly inheriting attributes from its parents."""   
              #  add 
              for a in self._gene_attributes:            
@@ -94,10 +94,11 @@ def crossover(self, gene2):
                                               (1 - lamda) * gene2.kernal[j][k]
              return new_gene
 ```
-　　5. 结点基因也可以进行变异`mutate`，对于每一个属性`a.name`，变异时，都会调用相应属性的`a.mutate_value`函数，新增的相应代码位于`attribute.py`的`ListAttribute`中。
+　　
+    5. 结点基因也可以进行变异`mutate`，对于每一个属性`a.name`，变异时，都会调用相应属性的`a.mutate_value`函数，新增的相应代码位于`attribute.py`的`ListAttribute`中。
   
     ```python
-         def mutate(self, config):
+       def mutate(self, config):
              for a in self._gene_attributes:
                  v = getattr(self, a.name)
                  setattr(self, a.name, a.mutate_value(v, config))
