@@ -38,9 +38,9 @@
   1. 首先，需要给结点基因`node_gene`增加卷积核属性`kernal`, 对于某一层的所有卷积核，这是一个四维(`out_channel x in_channel x kernal_size x kernal_size`)的属性。我们可以把最后两维度合并成大小为`kernal_size x kernal_size `的一维。对于`out_channel`的每一个 结点，只需要存储二维的`in_channel x new_kernal_size`。我使用二维的列表`[ [ ], [], ... ]` 来存储，我在`neat-python` 源码中的模块`attributes.py`中，新增了`ListAttribute`来表示这个二维的列表。
 
   2.  在`gene.py` 的默认结点基因`DefaultNodeGene`中, 增加了 属性`ListAttribute('kernal')`， 即每个结点对上一层所所有结点的卷积核。同时，增加`self.in_nodes = []`  记录卷积层结点的 输入channels。
-
-     ```python
-     class DefaultNodeGene(BaseGene):
+  
+  ```python
+class DefaultNodeGene(BaseGene):
          _gene_attributes = [FloatAttribute('bias'),
                              FloatAttribute('response'),
                              StringAttribute('activation', options='sigmoid'),
@@ -52,7 +52,8 @@
              BaseGene.__init__(self, key)                
              self.in_nodes = [] # add 卷积层结点的 输入channels       
              self.layer = layer
-     ```
+```
+
 
 　　3. 在复制结点基因`DefaultNodeGene`时，需要对`in_nodes`和`kernal` 进行深拷贝。
 
@@ -315,9 +316,8 @@
       ```
 
 　　11. 增加连接的函数`mutate_add_connection`，如果直接的连接`key=(in_node, out_node)`中`out_node`位于卷积层，则需要为结点 out_node` 增加一个卷积核，以及更新入度信息` `in_nodes` 。
-
-      ```python
-          def mutate_add_connection(self, config):        
+  ```python
+ def mutate_add_connection(self, config):        
               layer_num = randint(0, config.num_layer - 1)  # Choose outnode layer
               if layer_num == 0:
                   out_node = choice(list(self.layer[layer_num][1]))
@@ -336,12 +336,13 @@
                   else:
                       self.nodes[out_node].kernal = tmp.tolist() # 重新赋值                
                   self.nodes[out_node].in_nodes.append(in_node) # 更新入度信息
-      ```
+```
+
 
 　　12. 删除一个隐藏层结点`mutate_delete_node`，与该结点相连的连接需要跟随结点`del_key`一起删除。
-
-      ```python
-          def mutate_delete_node(self, config):        
+  
+  ```python
+  def mutate_delete_node(self, config):        
               # 只能删除隐藏层结点
               available_nodes = [k for k in iterkeys(self.nodes) if k not in config.output_keys]
               if not available_nodes:
@@ -376,7 +377,8 @@
               self.layer[self.nodes[del_key].layer][1].remove(del_key)
               del self.nodes[del_key]
               return del_key
-      ```
+```
+
 
 　　13. 在`evaluate_torch.py`中，实现了将个体(染色体)`genome`翻译成卷积神经网络。`set_layers`设置每一层的结点。
   ```python
@@ -413,7 +415,6 @@
 
 
 ```python
-  python
   def set_parameters(self, genome: neat1.genome.DefaultGenome):
           layer = list(self.children())#make sure change layer can affect parameters in cnn
           nodes = {}
