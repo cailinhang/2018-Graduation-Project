@@ -76,8 +76,8 @@ class DefaultNodeGene(BaseGene):
 
 　　4. 在结点基因交叉`crossover`时，增加对`kernal`的交叉。对于 `self` 的每一个卷积核`kernal[i]`，寻找`gene2`中是否有与之同源的连接，即`gene2.in_nodes[j] == self.in_nodes[i]`，对同源的`kernal[i]` 进行一定概率的交叉。
    
-    ```python
-  def crossover(self, gene2):
+   ```python
+   def crossover(self, gene2):
        """ Creates a new gene randomly inheriting attributes from its parents."""   
             #  add 
             for a in self._gene_attributes:            
@@ -94,11 +94,12 @@ class DefaultNodeGene(BaseGene):
                                               lamda * self.kernal[i][k] + \
                                               (1 - lamda) * gene2.kernal[j][k]
              return new_gene
+	     
 ```
 　　
     5. 结点基因也可以进行变异`mutate`，对于每一个属性`a.name`，变异时，都会调用相应属性的`a.mutate_value`函数，新增的相应代码位于`attribute.py`的`ListAttribute`中。
   
-    ```python
+   ```python
   def mutate(self, config):
              for a in self._gene_attributes:
                  v = getattr(self, a.name)
@@ -107,8 +108,8 @@ class DefaultNodeGene(BaseGene):
 
 　　6. 在个体(即染色体)`genome.py`中，配置新的个体`configure_new` 时，用`self.layer`记录每一层的结点集合。根据配置文件`config`要求的卷积层数量`num_cnn_layer` 、全连接层数量`num_layer - num_cnn_layer` 、初始结点数量、输入输出结点个数等来配置初始个体。
   
-    ```python
-    def configure_new(self, config):
+   ```python
+   def configure_new(self, config):
              """Configure a new genome based on the given configuration."""
              # Create cnn layer & fc layer
              for i in range(config.num_cnn_layer):
@@ -161,8 +162,8 @@ class DefaultNodeGene(BaseGene):
 
 　　7. 在初始完每一层的结点后，需要建立连接`connection`。由于初始连接不一定是全连接，因此，需要先计算所有可能的连接(这里考虑相邻两层的全连接)的函数`compute_full_connections_with_layer`，再从中选择一部分连接。
   
-    ```python
-def compute_full_connections_with_layer(self, config):        
+   ```python
+  def compute_full_connections_with_layer(self, config):        
              connections = []  # 所有可能的连接
              in_channels = {}  # 结点node的入度       
              for node in self.layer[0][1]:
@@ -319,8 +320,8 @@ def connect_partial(self, config):
 
 　　11. 增加连接的函数`mutate_add_connection`，如果直接的连接`key=(in_node, out_node)`中`out_node`位于卷积层，则需要为结点 out_node` 增加一个卷积核，以及更新入度信息` `in_nodes` 。
   
-    ```python
- 	def mutate_add_connection(self, config):        
+   ```python
+   def mutate_add_connection(self, config):        
               layer_num = randint(0, config.num_layer - 1)  # Choose outnode layer
               if layer_num == 0:
                   out_node = choice(list(self.layer[layer_num][1]))
