@@ -5,7 +5,7 @@
 ---
 - [项目计划](#项目计划)
 - [工作总结](#工作总结)
-  - [第七周(12.16~12.22)](#第七周(12.16~12.22))
+  - [第七周(12.16~12.22)](#第七周(12161222))
   - [第五六周(12.01~12.15)](#第五六周(12.01~12.15))
   - [第三四周(11.16~11.30)](#第三四周(11.16~11.30))
   - [第一二周(11.01~11.15)](#第一二周(11.01~11.15))
@@ -57,8 +57,8 @@ class DefaultNodeGene(BaseGene):
 
 　　3. 在复制结点基因`DefaultNodeGene`时，需要对`in_nodes`和`kernal` 进行深拷贝。
 
-     ```python
-     def copy(self):
+  ```python
+ def copy(self):
          if isinstance(self, DefaultNodeGene):             
              new_gene = self.__class__(self.key, self.layer) # 这里对 new_gene.layer赋值
          else:            
@@ -71,12 +71,12 @@ class DefaultNodeGene(BaseGene):
              new_gene.kernal = self.kernal.copy() 
              assert len(new_gene.in_nodes) == len(self.in_nodes)                
          return new_gene
-     ```
+```
 
 　　4. 在结点基因交叉`crossover`时，增加对`kernal`的交叉。对于 `self` 的每一个卷积核`kernal[i]`，寻找`gene2`中是否有与之同源的连接，即`gene2.in_nodes[j] == self.in_nodes[i]`，对同源的`kernal[i]` 进行一定概率的交叉。
-
-     ```python
-         def crossover(self, gene2):
+  
+    ```python
+def crossover(self, gene2):
              """ Creates a new gene randomly inheriting attributes from its parents."""   
              #  add 
              for a in self._gene_attributes:            
@@ -93,20 +93,19 @@ class DefaultNodeGene(BaseGene):
                                               lamda * self.kernal[i][k] + \
                                               (1 - lamda) * gene2.kernal[j][k]
              return new_gene
-     ```
-
+```
 　　5. 结点基因也可以进行变异`mutate`，对于每一个属性`a.name`，变异时，都会调用相应属性的`a.mutate_value`函数，新增的相应代码位于`attribute.py`的`ListAttribute`中。
-
-     ```python
+  
+    ```python
          def mutate(self, config):
              for a in self._gene_attributes:
                  v = getattr(self, a.name)
                  setattr(self, a.name, a.mutate_value(v, config))
-     ```
+```
 
 　　6. 在个体(即染色体)`genome.py`中，配置新的个体`configure_new` 时，用`self.layer`记录每一层的结点集合。根据配置文件`config`要求的卷积层数量`num_cnn_layer` 、全连接层数量`num_layer - num_cnn_layer` 、初始结点数量、输入输出结点个数等来配置初始个体。
-
-     ```python
+  
+    ```python
      def configure_new(self, config):
              """Configure a new genome based on the given configuration."""
              # Create cnn layer & fc layer
@@ -154,12 +153,13 @@ class DefaultNodeGene(BaseGene):
                  layer_nums = randint(0, config.num_layer - 2)            
                  node_key = hidden_node_key.pop()            
                  self.layer[layer_nums][1].add(node_key)
-                 self.nodes[node_key].layer = layer_nums                                
-     ```
+                 self.nodes[node_key].layer = layer_nums   
+```
+
 
 　　7. 在初始完每一层的结点后，需要建立连接`connection`。由于初始连接不一定是全连接，因此，需要先计算所有可能的连接(这里考虑相邻两层的全连接)的函数`compute_full_connections_with_layer`，再从中选择一部分连接。
-
-     ```python
+  
+    ```python
          def compute_full_connections_with_layer(self, config):        
              connections = []  # 所有可能的连接
              in_channels = {}  # 结点node的入度       
@@ -187,12 +187,12 @@ class DefaultNodeGene(BaseGene):
                  for i in iterkeys(self.nodes):
                      connections.append((i, i))
              return connections, in_channels
-     ```
+```
 
 　　8. 在选择部分连接的函数`connect_partial`编写如下，选择一部分连接加入到`self.connections`中，同时更新结点的入度信息`in_nodes`。
 
-     ```python
-     def connect_partial(self, config):
+  ```python
+def connect_partial(self, config):
              """
              Create a partially-connected genome,
              with (unless no hidden nodes) no direct input-output connections."""
@@ -225,11 +225,11 @@ class DefaultNodeGene(BaseGene):
                  tmp = randn(in_num-1, len(self.nodes[node_id].kernal[0]))                        
                  self.nodes[node_id].kernal += tmp.tolist()               
                  assert len(self.nodes[node_id].kernal) == len(self.nodes[node_id].in_nodes)   
-     ```
+```
 
 　　9. 选择全连接的函数`connect_full`如下,等价于上面函数`connect_partial`中`config.connection_fraction=1`的情况。
 
-     ```python
+  ```python
          def connect_full(self, config):
              """Create a fully-connected cnn genome"""       
              connects, in_channels = self.compute_full_connections_with_layer(config)        
@@ -245,11 +245,11 @@ class DefaultNodeGene(BaseGene):
                  tmp = randn(in_num-1, len(self.nodes[node_id].kernal[0]))                        
                  self.nodes[node_id].kernal += tmp.tolist()                        
                  assert len(self.nodes[node_id].kernal) == len(self.nodes[node_id].in_nodes)  
-     ```
+```    
 
 　　10. 变异增加一个结点`mutate_add_node`。
 
-      ```python
+  ```python
       def mutate_add_node(self, config):        
               # randint(a,b) 左右都是闭区间[a,b]                        
               layer_num = randint(0, config.num_layer - 2)        
@@ -312,11 +312,12 @@ class DefaultNodeGene(BaseGene):
                       if len(self.nodes[node_id].in_nodes) > 1:                   
                           tmp = randn(1, len(self.nodes[node_id].kernal[0]))                    
                           self.nodes[node_id].kernal += tmp.tolist()                                 
-                      assert len(self.nodes[node_id].kernal) == len(self.nodes[node_id].in_nodes)                                     
-      ```
+                      assert len(self.nodes[node_id].kernal) == len(self.nodes[node_id].in_nodes)  
+```
 
 　　11. 增加连接的函数`mutate_add_connection`，如果直接的连接`key=(in_node, out_node)`中`out_node`位于卷积层，则需要为结点 out_node` 增加一个卷积核，以及更新入度信息` `in_nodes` 。
-  ```python
+  
+    ```python
  def mutate_add_connection(self, config):        
               layer_num = randint(0, config.num_layer - 1)  # Choose outnode layer
               if layer_num == 0:
@@ -337,7 +338,7 @@ class DefaultNodeGene(BaseGene):
                       self.nodes[out_node].kernal = tmp.tolist() # 重新赋值                
                   self.nodes[out_node].in_nodes.append(in_node) # 更新入度信息
 ```
-
+  
 
 　　12. 删除一个隐藏层结点`mutate_delete_node`，与该结点相连的连接需要跟随结点`del_key`一起删除。
   
