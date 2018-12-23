@@ -33,11 +33,11 @@
 
 ### 第七周(12.16~12.22)
 
-　　第七周，我阅读了神经进化库 `neat-python`使用文档及其源码。经过对源码的研读，我发现，`neat-python`库只能进化只包含全连接层`fc`的神经网络，而不能进化包含卷积层`cnn layer`的网络。因此，为了能够进化卷积神经网络`cnn`, 我基于`pytorch`, 对`neat-python`的源码进行了修改，使得它也能进行卷积神经网络`cnn`。
+　　第七周，我阅读了神经进化库 `neat-python`使用文档及其源码。经过对源码的研读，我发现，`neat-python`库只能进化只包含全连接层`fc`的神经网络，而不能进化包含卷积层`cnn layer`的网络。因此，为了能够进化卷积神经网络`cnn`, 我基于`pytorch`, 对`neat-python`的源码进行了修改，使得它也能进化卷积神经网络`cnn`。
 
   1. 首先，需要给结点基因`node_gene`增加卷积核属性`kernal`, 对于某一层的所有卷积核，这是一个四维(`out_channel x in_channel x kernal_size x kernal_size`)的属性。我们可以把最后两维度合并成大小为`kernal_size x kernal_size `的一维。对于`out_channel`的每一个 结点，只需要存储二维的`in_channel x new_kernal_size`。我使用二维的列表`[ [ ], [], ... ]` 来存储，我在`neat-python` 源码中的模块`attributes.py`中，新增了`ListAttribute`来表示这个二维的列表。
 
-  2.  在`gene.py` 的默认结点基因`DefaultNodeGene`中, 增加了 属性`ListAttribute('kernal')`， 即每个结点对上一层所所有结点的卷积核。同时，增加`self.in_nodes = []`  记录卷积层结点的 输入channels。
+  2.  在`gene.py` 的默认结点基因`DefaultNodeGene`中, 增加了 属性`ListAttribute('kernal')`， 即每个结点对上一层所有结点的卷积核。同时，增加`self.in_nodes = []`  记录卷积层结点的 输入channels。
   
   ```python
 class DefaultNodeGene(BaseGene):
@@ -499,14 +499,15 @@ def connect_partial(self, config):
           return x
 ```
 
-16. 在`minst`数据集上，进行了简单的测试。生成的网络如下：
+16. 在`mnist`数据集上，进行了简单的测试。生成的网络如下：
 
       <center><img src="images\Digraph2.gv.svg" style="zoom: 100%"></center>
 
 17. 对生成的网络进行按结点剪枝(减去`50%`)，得到的剪枝后的网络如下。同时，将剪枝后的网络写回去染色体`genome`中去，再用`genome`生成一个新的网络，一方面验证新生成的网络的性能，也说明了从染色体到网络之间的可逆性。
 
     <center><img src="images\Digraph2-prune.gv.svg" style="zoom: 70%"></center>
-
+18. 在`mnist`上截取的小数据集上，进行了测试，进化`600`代，每一代的每一个个体都有一定的概率被剪枝(根据结点权重weight的`L2-norm`选择删去的结点)，运行结果(每一代`generation`的最大适应度`best-fitness` 和 平均适应度 `mean-fitness`)如下：
+<center><img src="images\mnist-fitness-600.png" style="zoom: 70%"></center>
 
 
 ### 第五六周(12.01~12.15)
