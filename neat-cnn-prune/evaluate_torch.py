@@ -104,7 +104,7 @@ class Net(nn.Module):
                 if len(values) == self.num_layer - self.num_cnn_layer -1:
                     break
                 p_np = p.data.cpu().numpy()
-                print('size() ', p.data.size())
+                #print('size() ', p.data.size())
                 
                 value_this_layer = np.abs(p_np).sum(axis=1) / \
                     (p_np.shape[1])
@@ -121,10 +121,10 @@ class Net(nn.Module):
         #print(values.shape)
         assert len(values) == self.num_layer - self.num_cnn_layer -1
         
-        print(values[0])
+        #print(values[0])
         # 最小L1-Norm filter 所在的 层layer index
         to_prune_layer_idx = np.argmin(values[:, 0]) + self.num_cnn_layer
-        print('to_prune_layer ', to_prune_layer_idx)
+        #print('to_prune_layer ', to_prune_layer_idx)
         
         pruned_filter_idx = int(values[to_prune_layer_idx-self.num_cnn_layer, 1])                
         
@@ -132,14 +132,14 @@ class Net(nn.Module):
         #l = list(self.old_layer[int(to_prune_layer_idx/2)][1]) # l是 结点 id 的 list
         l = list(self.old_layer[int(to_prune_layer_idx/1)][1]) # l是 结点 id 的 list
         l.sort()# 如果改变了 old_layer列表，就不能用sort
-        print(len(l))
+        #print(len(l))
         if len(l) == 1:
             print('cannot prune  layer %d again'%(len(self.old_layer[to_prune_layer_idx][1])))
             return None, None, False
         #print(l)
         
         del_node = l[pruned_filter_idx] # 删除的结点的id
-        print(' del_node  ', del_node )  
+        #print(' del_node  ', del_node )  
 
         del_node_list = []                                
         del_connects = []
@@ -153,7 +153,7 @@ class Net(nn.Module):
                     #print(out_node,' in_dict --> ', in_dict[out_node])
                     if len(in_dict[out_node]) == 1:
                         print('prune ' , in_node, ' ==> output ', out_node, ' forbid')
-                        print('cannot prune  layer %d '%(len(self.old_layer[to_prune_layer_idx][1])))
+                        print('cannot prune  layer %d with %d nodes '%(to_prune_layer_idx ,len(self.old_layer[to_prune_layer_idx][1])))
                         return None, None, False
                         #continue
                 del_connects.append((in_node, out_node))
@@ -283,8 +283,9 @@ class Net(nn.Module):
                 if prune_layer < self.num_cnn_layer:
                     node_type = 4
                 cur_idx = 0
+                print('hhhhhh')
                 for p in self.parameters():
-                    
+                    print(p.data.size())
                     if len(p.data.size()) == node_type:
                         
                         if cur_idx == prune_layer:
@@ -294,9 +295,10 @@ class Net(nn.Module):
                                                                                                                                                         
                         elif cur_idx == prune_layer + 1:
                             
-                            del_no_pos = self.nodes[ del_no ][1]                                      
+                            del_no_pos = self.nodes[ del_no ][1]     
+                            print('Before delete ', del_no,' ',p.data.size())                                 
                             p.data = torch.cat( [p.data[:, 0: del_no_pos]  , p.data[:, del_no_pos+1:] ] ,dim=1  )
-                            
+                            print('After delete ', p.data.size())
                             for nod in self.old_layer[prune_layer][1]:
                                 if self.nodes[nod][1] > del_no_pos:
                                     self.nodes[nod][1] -= 1
@@ -313,7 +315,10 @@ class Net(nn.Module):
                         if cur_idx == prune_layer + 1:
                             del_no_pos = self.nodes[ del_no ][1]   
                             p.data = torch.cat([p.data[: del_no_pos] , p.data[del_no_pos+1:]], dim=0)
-                        
+                            # add 
+                            if node_type == 4 and prune_layer == self.num_cnn_layer -1:
+                                node_type = 2
+                                
                 self.old_layer[ self.old_nodes[del_no].layer ][1].remove( del_no )
                 del self.old_nodes[del_no] # 删除 结点        
             else:
@@ -356,10 +361,10 @@ class Net(nn.Module):
                     p.data = torch.cat([p.data[: pruned_filter_idx] , p.data[pruned_filter_idx+1:]], dim=0)
                     
                                             
-        print('Prune fc-filter #{} gene_id #{} in layer #{}'.format(
-            pruned_filter_idx,
-            del_node,
-            to_prune_layer_idx))
+#        print('Prune fc-filter #{} gene_id #{} in layer #{}'.format(
+#            pruned_filter_idx,
+#            del_node,
+#            to_prune_layer_idx))
         
         return del_node, del_connects, True
     
@@ -388,13 +393,13 @@ class Net(nn.Module):
                 
         values = np.array(values)
         #print(values.shape)
-        print(values[0])
+        #print(values[0])
         
         # 最小L2-Norm filter 所在的 层layer index
         to_prune_layer_idx = np.argmin(values[:, 0])
-        print('prune_layer ', to_prune_layer_idx)
+        #print('prune_layer ', to_prune_layer_idx)
         pruned_filter_idx = int(values[to_prune_layer_idx, 1])
-        print('filter_id', pruned_filter_idx)
+        #print('filter_id', pruned_filter_idx)
         
         to_prune_layer_idx *= 1
         #l = list(self.old_layer[int(to_prune_layer_idx/2)][1]) # l是 结点 id 的 list
@@ -580,7 +585,10 @@ class Net(nn.Module):
                         if cur_idx == prune_layer + 1:
                             del_no_pos = self.nodes[ del_no ][1]   
                             p.data = torch.cat([p.data[: del_no_pos] , p.data[del_no_pos+1:]], dim=0)
-                                        
+                            
+                            if node_type == 4 and prune_layer == self.num_cnn_layer -1: # add
+                                node_type = 2          
+                            
                 self.old_layer[ self.old_nodes[del_no].layer ][1].remove( del_no )
                 del self.old_nodes[del_no] # 删除 结点        
             else:
@@ -627,8 +635,9 @@ class Net(nn.Module):
 
             elif len(p.data.size()) == 2 : # fc weight                
                 if idx == 1 * self.num_cnn_layer:
+                    #print('p.data.size() ', p.data.size())
                     p.data = torch.cat([p.data[:, 0: pruned_filter_idx], p.data[:, pruned_filter_idx+1 :] ], dim=1  )                                            
-                    
+                    #print('After prune , p.data.size() ', p.data.size())
                     del_no = -333          
                     for k, pos in self.nodes.items():
                         if pos[0] == to_prune_layer_idx and pos[1] == pruned_filter_idx:
@@ -653,10 +662,10 @@ class Net(nn.Module):
                     p.data = torch.cat([p.data[: pruned_filter_idx] , p.data[pruned_filter_idx+1:]], dim=0)
                     
                                             
-        print('Prune filter #{} gene_id #{} in layer #{}'.format(
-            pruned_filter_idx,
-            del_node,
-            to_prune_layer_idx))                
+#        print('Prune filter #{} gene_id #{} in layer #{}'.format(
+#            pruned_filter_idx,
+#            del_node,
+#            to_prune_layer_idx))                
             
         return del_node, del_connects, True
     
