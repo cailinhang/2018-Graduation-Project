@@ -509,6 +509,8 @@ def connect_partial(self, config):
 18. 在`mnist`上截取的小数据集上，进行了测试，进化`600`代，每一代的每一个个体都有一定的概率被剪枝(根据结点权重weight的`L2-norm`选择删去的结点)，运行结果(每一代`generation`的最大适应度`best-fitness` 和 平均适应度 `mean-fitness`)如下：
 <center><img src="images\mnist-fitness-600.png" style="zoom: 70%"></center>
 
+19. 与进化过程中不减枝`prune-prob=0`的平均适应度的对比如下。
+<center><img src="images\mean-fit-wrt-prune-prob.png" style="zoom: 70%"></center>
 
 ### 第五六周(12.01~12.15)
 
