@@ -32,7 +32,7 @@ class Net(nn.Module):
         for i in range(self.num_cnn_layer):
             # max_index = 2*(num_cnn_layer-1)+1=2*num_cnn_layer-1
             x = l[1 * i](x)
-            x = nn.BatchNorm2d(num_features=x.shape[1])(x)
+            #x = nn.BatchNorm2d(num_features=x.shape[1])(x)
             
             x = F.relu(x)
             x = F.max_pool2d(x, 2)
@@ -47,11 +47,11 @@ class Net(nn.Module):
         for i in range(self.num_cnn_layer, self.num_layer - 1):
             # start index =  max_index +1 = 2*num_cnn_layer
             x = F.relu(l[i + 0](x))
-        bn = nn.BatchNorm1d(num_features=10)
+        #bn = nn.BatchNorm1d(num_features=10)
         x = l[-1](x) 
         #print('----')
         #print(x)
-        x = bn(x)
+        #x = bn(x)
         #print(x)
         #print(F.softmax(x, dim=1))
         #return F.softmax(x, dim=1)
@@ -127,12 +127,12 @@ class Net(nn.Module):
         #print('to_prune_layer ', to_prune_layer_idx)
         
         pruned_filter_idx = int(values[to_prune_layer_idx-self.num_cnn_layer, 1])                
-        
+        #print('pruned_filter_idx ', pruned_filter_idx)
         to_prune_layer_idx *= 1
         #l = list(self.old_layer[int(to_prune_layer_idx/2)][1]) # l是 结点 id 的 list
         l = list(self.old_layer[int(to_prune_layer_idx/1)][1]) # l是 结点 id 的 list
         l.sort()# 如果改变了 old_layer列表，就不能用sort
-        #print(len(l))
+        #print('len(l) ', len(l))
         if len(l) == 1:
             print('cannot prune  layer %d again'%(len(self.old_layer[to_prune_layer_idx][1])))
             return None, None, False
@@ -286,7 +286,7 @@ class Net(nn.Module):
                 print('hhhhhh')
                 for p in self.parameters():
                     print(p.data.size())
-                    if len(p.data.size()) == node_type:
+                    if len(p.data.size()) == 2 or len(p.data.size()) == 4:
                         
                         if cur_idx == prune_layer:
                                                             
@@ -296,9 +296,9 @@ class Net(nn.Module):
                         elif cur_idx == prune_layer + 1:
                             
                             del_no_pos = self.nodes[ del_no ][1]     
-                            print('Before delete ', del_no,' ',p.data.size())                                 
+                            #print('Before delete ', del_no,' ',p.data.size())                                 
                             p.data = torch.cat( [p.data[:, 0: del_no_pos]  , p.data[:, del_no_pos+1:] ] ,dim=1  )
-                            print('After delete ', p.data.size())
+                            #print('After delete ', p.data.size())
                             for nod in self.old_layer[prune_layer][1]:
                                 if self.nodes[nod][1] > del_no_pos:
                                     self.nodes[nod][1] -= 1
@@ -557,7 +557,7 @@ class Net(nn.Module):
                 cur_idx = 0
                 for p in self.parameters():
                     
-                    if len(p.data.size()) == node_type:
+                    if len(p.data.size()) == 2 or len(p.data.size()) == 4: 
                         
                         if cur_idx == prune_layer:
                                                             
@@ -845,3 +845,91 @@ class Net(nn.Module):
                 (layer[layer_num].weight.data[weight_tensor_num])[weight_num] = \
                     torch.FloatTensor([genome.connections[(in_node, out_node)].weight])
                 #print('mm')                        
+
+    def write_back_parameters(self, genome: neat1.genome.DefaultGenome):
+
+        layer = list(self.children())#make sure change layer can affect parameters in cnn
+
+        nodes = {}        
+        order = 0
+        for i in range(-self.num_inputs, 0):
+            position = [-1, order]   #-1 means input node
+            nodes.update({i: position})
+            order += 1
+        first = True            
+        for i in range(self.num_layer):
+            l = list(genome.layer[i][1])
+            l.sort()
+            for j in range(len(l)):
+                # (id, [layer, order in layer] )
+                position = [i, j]
+                nodes.update({l[j]: position})
+                                
+                if i < self.num_cnn_layer:
+                    
+                    a1 = np.array(self.old_nodes[l[j]].kernal)                    
+                    a = np.array(layer[ i ].weight.data[j].cpu())                            
+                    
+                    #genome.nodes[l[j]].kernal = a.reshape(9)
+                          
+#                    print('layer %d , %d -th ,node_id %d '%(i, j ,l[j]))
+#                    print(len(self.old_nodes[l[j]].in_nodes), ' ',len(a), len(a1) )
+                    
+                    assert len(self.old_nodes[l[j]].in_nodes) == 0 or len(self.old_nodes[l[j]].in_nodes) == len(a1)
+
+                    if i == 0 and len(self.old_nodes[l[j]].in_nodes) == 0:
+                        print(str(l[j]) , ' no_input to first cnn layer')
+
+                    if len(self.old_nodes[l[j]].in_nodes) > 0:  
+                        
+                        for k in range(len(a1)):
+                            
+                            genome.nodes[l[j]].kernal[k] = (a[ nodes[ self.old_nodes[l[j]].in_nodes[k] ][1] ]).reshape(9)
+                            
+#                            layer[i * 1 + 0 ].weight.data[j][nodes[ self.old_nodes[l[j]].in_nodes[k]][1] ] = \
+#                               torch.FloatTensor(a[k].reshape(3, 3))
+                    
+                    #print(len(a), len(a[0]))
+                    #if i == 0 and first:
+                        #first = False
+                        #print(j,' ', l[j] ,' ', genome.nodes[l[j]].bias)                        
+                        #print(layer[i].bias.data[j].item()  )
+                        #print(layer[i].bias.data, '\n')
+                        #genome.nodes[l[j]].bias = layer[i].bias.data[j].item()                
+                        #print(genome.nodes[l[j]].bias)
+                    
+                    genome.nodes[l[j]].bias = layer[i].bias.data[j].item()                
+                    #if i == 0: 
+                        #print(j,' ', l[j] ,' ', genome.nodes[l[j]].bias)                        
+                        #print(layer[i].bias.data[j].item()  )
+                        #print(layer[i].bias.data, '\n')
+                        #genome.nodes[l[j]].bias = layer[i].bias.data[j].item()                
+                        #print(genome.nodes[l[j]].bias)
+                else:
+                    genome.nodes[l[j]].bias = layer[i].bias.data[j].item()
+
+        #TODO: add write back
+        for in_node, out_node in genome.connections:
+
+            c = nodes[out_node][0] #layer number
+            if c < self.num_cnn_layer: #cnn layer
+                pass
+
+            elif c != self.num_cnn_layer:
+                layer_num = 0 + c
+                weight_tensor_num = nodes[out_node][1]
+                weight_num = nodes[in_node][1]
+                genome.connections[(in_node, out_node)].weight = \
+                    (layer[layer_num].weight.data[weight_tensor_num])[weight_num].item()
+            else:
+                
+                layer_num = 0 + c
+                
+                weight_tensor_num = nodes[out_node][1]
+            
+                #weight_num = nodes[in_node][1] * self.num_first_fc_layer_node + nodes[out_node][1]
+                weight_num  = nodes[in_node][1]
+                #print(weight_num)
+                genome.connections[(in_node, out_node)].weight = \
+                (layer[layer_num].weight.data[weight_tensor_num])[weight_num].item()
+                               
