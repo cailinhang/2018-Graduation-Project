@@ -5,7 +5,8 @@
 ---
 - [项目计划](#项目计划)
 - [工作总结](#工作总结)
-  - [第七周(12.16~12.22)](#第七周12161222)
+  - [第八周(12.24~12.31)](#第八周12241231) 
+  - [第七周(12.16~12.23)](#第七周12161223)
   - [第五六周(12.01~12.15)](#第五六周12011215)
   - [第三四周(11.16~11.30)](#第三四周11161130)
   - [第一二周(11.01~11.15)](#第一二周11011115)
@@ -31,14 +32,34 @@
 
 ## 工作总结
 
-### 第七周(12.16~12.22)
+### 第八周(12.24~12.31)
+　　第八周，主要进行代码调参、运行。代码部分增加了将网络参数写回染色体`genome`，对剪枝后的网络进行`retrain`。实验中用到的数据集是`mnist`中训练集和测试集各自的前`400`个样本。
+
+　　首先，再次呈现第七周时在`mnist`小数据集上运行中`CNN`卷积网络神经进化的的平均适应度`mean-fitness`。可以发现，无论是否对结点进行剪枝`prune`(不减枝`prune-prob=0`), 效果都很差。当然，在进化过程中使用了剪枝可以大大提高每一代`genration`迭代的速度，缺点是，在代数足够大的时候，此时网络每一层可能被削减至每一层只有少数几个结点，所以，需要控制好剪枝的概率，使得网络结点增加的概率大于剪枝的概率，避免网络结点锐减。
+
+<center><img src="images\mean-fit-wrt-prune-prob.png" style="zoom: 70%"></center>
+
+　　我认为是因为卷积神经网络`CNN`的参数数量过多，神经进化这种方法对卷积层参数做出有益调整难度过大所导致的(实验中用的网络是4层卷积层和三层全连接层`fc`，卷积核大小是`3x3`)，所以，实验结果的`fitness`曲线一直在上下动荡，没有向好的方面发展的趋势。在实验中，人口数量`pop_size = 30`，但是发现个体很难继承到好的基因。
+
+　　因此，我尝试在网络进化过程中，加入`Back Propagation`，人口数量`pop_size=5`。每一代中，每个个体都会训练2个`epoches`。同时，每一代中，每个个体都有可能被剪枝`prune`(通过结点剪枝抑制网络结点数量的增加)，调整剪枝的阈值`prune_threshold`(0到1之间)，被剪枝的个体会多训练2个`epoches`作为对剪枝`prune`的`retrain` ,调整剪枝的阈值`prune_threshold`，得到如下每一代(100代)中平均适应度`mean-fit`的结果。
+<center><img src="images/mean-fit-wrt-prune-thre.png" style="zoom:100%"></center>
+
+　　可以看出，加入`BP`后，虽然人口数量从`30`削减至`5`, 但训练的速度和效果大幅度提高。对于上面的四种不同的剪枝概率，只需迭代`40`代，平均适应度都能达到`0.7`以上。同时，对应的最大适应度`max-fit`可以达到`0.8` (对比图如下) 。
+
+　　此外，当代数`generation`大于60后，适应度均出现较明显下滑，剪枝阈值`prune-threshold`越低，现象越严重，一方面是因为过拟合`over-fitting`，另一方面，是因为`prune-threshold`对网络结点的削减导致，例如，在`prune-threshold=0.2`时，剪枝概率过大(为`1-0.2 = 0.8`)，所以，随着代数增加，必然出现网络结点锐减的现象。
+
+<center><img src="images/max-fit-wrt-prune-thre.png" style="zoom:100%"></center>
+
+
+
+### 第七周(12.16~12.23)
 
 　　第七周，我阅读了神经进化库 `neat-python`使用文档及其源码。经过对源码的研读，我发现，`neat-python`库只能进化只包含全连接层`fc`的神经网络，而不能进化包含卷积层`cnn layer`的网络。因此，为了能够进化卷积神经网络`cnn`, 我基于`pytorch`, 对`neat-python`的源码进行了修改，使得它也能进化卷积神经网络`cnn`。
 
   1. 首先，需要给结点基因`node_gene`增加卷积核属性`kernal`, 对于某一层的所有卷积核，这是一个四维(`out_channel x in_channel x kernal_size x kernal_size`)的属性。我们可以把最后两维度合并成大小为`kernal_size x kernal_size `的一维。对于`out_channel`的每一个 结点，只需要存储二维的`in_channel x new_kernal_size`。我使用二维的列表`[ [ ], [], ... ]` 来存储，我在`neat-python` 源码中的模块`attributes.py`中，新增了`ListAttribute`来表示这个二维的列表。
 
   2.  在`gene.py` 的默认结点基因`DefaultNodeGene`中, 增加了 属性`ListAttribute('kernal')`， 即每个结点对上一层所有结点的卷积核。同时，增加`self.in_nodes = []`  记录卷积层结点的 输入channels。
-  
+
   ```python
 class DefaultNodeGene(BaseGene):
          _gene_attributes = [FloatAttribute('bias'),
@@ -52,7 +73,7 @@ class DefaultNodeGene(BaseGene):
              BaseGene.__init__(self, key)                
              self.in_nodes = [] # add 卷积层结点的 输入channels       
              self.layer = layer
-```
+  ```
 
 
 　　3. 在复制结点基因`DefaultNodeGene`时，需要对`in_nodes`和`kernal` 进行深拷贝。
@@ -71,11 +92,11 @@ class DefaultNodeGene(BaseGene):
              new_gene.kernal = self.kernal.copy() 
              assert len(new_gene.in_nodes) == len(self.in_nodes)                
          return new_gene
-```
+  ```
 
 
 　　4. 在结点基因交叉`crossover`时，增加对`kernal`的交叉。对于 `self` 的每一个卷积核`kernal[i]`，寻找`gene2`中是否有与之同源的连接，即`gene2.in_nodes[j] == self.in_nodes[i]`，对同源的`kernal[i]` 进行一定概率的交叉。
-   
+
    ```python
    def crossover(self, gene2):
        """ Creates a new gene randomly inheriting attributes from its parents."""   
@@ -95,19 +116,19 @@ class DefaultNodeGene(BaseGene):
                                               (1 - lamda) * gene2.kernal[j][k]
              return new_gene
 	     
-```
-　　
+   ```
+
     5. 结点基因也可以进行变异`mutate`，对于每一个属性`a.name`，变异时，都会调用相应属性的`a.mutate_value`函数，新增的相应代码位于`attribute.py`的`ListAttribute`中。
-  
+
    ```python
   def mutate(self, config):
              for a in self._gene_attributes:
                  v = getattr(self, a.name)
                  setattr(self, a.name, a.mutate_value(v, config))
-```
+   ```
 
 　　6. 在个体(即染色体)`genome.py`中，配置新的个体`configure_new` 时，用`self.layer`记录每一层的结点集合。根据配置文件`config`要求的卷积层数量`num_cnn_layer` 、全连接层数量`num_layer - num_cnn_layer` 、初始结点数量、输入输出结点个数等来配置初始个体。
-  
+
    ```python
    def configure_new(self, config):
              """Configure a new genome based on the given configuration."""
@@ -157,11 +178,11 @@ class DefaultNodeGene(BaseGene):
                  node_key = hidden_node_key.pop()            
                  self.layer[layer_nums][1].add(node_key)
                  self.nodes[node_key].layer = layer_nums   
-```
+   ```
 
 
 　　7. 在初始完每一层的结点后，需要建立连接`connection`。由于初始连接不一定是全连接，因此，需要先计算所有可能的连接(这里考虑相邻两层的全连接)的函数`compute_full_connections_with_layer`，再从中选择一部分连接。
-  
+
    ```python
   def compute_full_connections_with_layer(self, config):        
              connections = []  # 所有可能的连接
@@ -190,7 +211,7 @@ class DefaultNodeGene(BaseGene):
                  for i in iterkeys(self.nodes):
                      connections.append((i, i))
              return connections, in_channels
-```
+   ```
 
 　　8. 在选择部分连接的函数`connect_partial`编写如下，选择一部分连接加入到`self.connections`中，同时更新结点的入度信息`in_nodes`。
 
@@ -228,7 +249,7 @@ def connect_partial(self, config):
                  tmp = randn(in_num-1, len(self.nodes[node_id].kernal[0]))                        
                  self.nodes[node_id].kernal += tmp.tolist()               
                  assert len(self.nodes[node_id].kernal) == len(self.nodes[node_id].in_nodes)   
-```
+  ```
 
 　　9. 选择全连接的函数`connect_full`如下,等价于上面函数`connect_partial`中`config.connection_fraction=1`的情况。
 
@@ -248,7 +269,7 @@ def connect_partial(self, config):
                  tmp = randn(in_num-1, len(self.nodes[node_id].kernal[0]))                        
                  self.nodes[node_id].kernal += tmp.tolist()                        
                  assert len(self.nodes[node_id].kernal) == len(self.nodes[node_id].in_nodes)  
-```    
+  ```
 
 　　10. 变异增加一个结点`mutate_add_node`。
 
@@ -316,10 +337,10 @@ def connect_partial(self, config):
                           tmp = randn(1, len(self.nodes[node_id].kernal[0]))                    
                           self.nodes[node_id].kernal += tmp.tolist()                                 
                       assert len(self.nodes[node_id].kernal) == len(self.nodes[node_id].in_nodes)  
-```
+  ```
 
 　　11. 增加连接的函数`mutate_add_connection`，如果直接的连接`key=(in_node, out_node)`中`out_node`位于卷积层，则需要为结点 out_node` 增加一个卷积核，以及更新入度信息` `in_nodes` 。
-  
+
    ```python
    def mutate_add_connection(self, config):        
               layer_num = randint(0, config.num_layer - 1)  # Choose outnode layer
@@ -340,11 +361,11 @@ def connect_partial(self, config):
                   else:
                       self.nodes[out_node].kernal = tmp.tolist() # 重新赋值                
                   self.nodes[out_node].in_nodes.append(in_node) # 更新入度信息
-```
-  
+   ```
+
 
 　　12. 删除一个隐藏层结点`mutate_delete_node`，与该结点相连的连接需要跟随结点`del_key`一起删除。
-  
+
   ```python
   	def mutate_delete_node(self, config):        
               # 只能删除隐藏层结点
@@ -381,7 +402,7 @@ def connect_partial(self, config):
               self.layer[self.nodes[del_key].layer][1].remove(del_key)
               del self.nodes[del_key]
               return del_key
-```
+  ```
 
 
 　　13. 在`evaluate_torch.py`中，实现了将个体(染色体)`genome`翻译成卷积神经网络。`set_layers`设置每一层的结点。
