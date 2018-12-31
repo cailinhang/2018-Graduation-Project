@@ -50,7 +50,18 @@
 
 <center><img src="images/max-fit-wrt-prune-thre.png" style="zoom:100%"></center>
 
+　　将适应度`fitness`修改为测试集上的准确率，代数`generation=300`，重新运行代码, 并和普通后向传播`BP`进行`300`次训练的结果进行对比，得到最大适应度如下：
+<center><img src="images/max-test-fit-wrt-prune-thre-bp-400-0.png" style="zoom:100%"></center>  
+　　为方便观察比较，将上面的结果按着`0.2`的`prune-threshold`为间隔分组对照。
+<center><img src="images/max-test-fit-wrt-prune-thre-bp-400-1.png" style="zoom:100%"></center>  
 
+<center><img src="images/max-test-fit-wrt-prune-thre-bp-400-2.png" style="zoom:100%"></center>  
+　　平均适应度结果如下：
+<center><img src="images/mean-test-fit-wrt-prune-thre-bp-400-0.png" style="zoom:100%"></center>  
+　　为方便观察比较，将上面的结果按着`0.2`的`prune-threshold`为间隔分组对照。
+<center><img src="images/mean-test-fit-wrt-prune-thre-bp-400-1.png" style="zoom:100%"></center>  
+
+<center><img src="images/mean-test-fit-wrt-prune-thre-bp-400-2.png" style="zoom:100%"></center>  
 
 ### 第七周(12.16~12.23)
 
