@@ -4,7 +4,8 @@
 
 ---
 - [项目计划](#项目计划)
-- [工作总结](#工作总结)
+- [工作总结](#工作总结) 
+  - [update(19.03.12)](#update190312) 
   - [第八周(12.24~12.31)](#第八周12241231) 
   - [第七周(12.16~12.23)](#第七周12161223)
   - [第五六周(12.01~12.15)](#第五六周12011215)
@@ -32,38 +33,90 @@
 
 ## 工作总结
 
+### update(19.03.12)
+
+  1. 调整种群大小 population = 20， 种群精英个数(即每一代中存活到下一代的优秀个体数量)elitism = 4。为简单起见，去掉种群分化 speciation， 使得所有个体都面临一样的竞争关系，不会因为所属的物种species数量稀少而一直存活。
+
+  2. 调整每个个体的训练次数，由最开始的每一代每个个体训练2次调整为，每一个个体只在它被创造出来的时候被训练一定次数(如5、10、15、20等)，之后就不比再进行训练了，这样可以检验遗传算法是不是真的起了作用，原先的每一代训练2次的做法的缺点是，无法阐明到底是神经进化对网络的结构和权重进行调整起了作用，还是梯度下降BP训练起了作用。
+
+  3. 修改并固定了训练次数后，同样在`mnist`数据集上，目前最优测试准确率可以到`0.93625`,最优平均 测试准确率可以到`0.92031`。作为对比，我用`BP`在`mnist`上训练了`600`代，最优准确率达到了`0.9265`，这说明了神经进化的确起到了作用。
+
+  4. 观察每一代的优胜者elitism(即每一代中适应度`fitness`的前elitism名，这里设置为前`4`名), 可以发现，在代数generation比较小(小于`120`)的时候，前`4`名的更迭比较明显，到了后期，由于前`4`名的准确率都达到了`0.91`之上，他们的子代很难仅仅通过和它们一样的训练次数来进入前`4`名，(前面提到，每个个体只会在创建时被训练一定的固定次数，此后不再训练)，导致后期的优胜者elitism很难被搅动，神经进化进入平稳阶段，很难有更优秀个体出现。
+
+     ```
+     举个例子： elitism= 4 ，到了235代，前4名的fitness基本很难被新生个体撼动。
+     ****** Running generation 235 ****** 
+     popu_idx: fitness individual_id
+     1: 0.944 2970
+     2: 0.940 1510
+     3: 0.940 1541
+     4: 0.939 3013
+     
+     5: 0.927 3765    6: 0.914 3766     7: 0.922 3767    8: 0.907 3768     9: 0.894 3769
+     10: 0.916 3770   11: 0.921 3771    12: 0.909 3772   13: 0.915 3773    14: 0.915 3774
+     15: 0.914 3775   16: 0.911 3776    17: 0.912 3777   18: 0.922 3778    19: 0.884 3779          20: 0.919 3780
+     
+     Population's average fitness: 0.91831 stdev: 0.01465
+     Best fitness: 0.94375 - size: (98, 767) - species 1 - id 2970
+     Average adjusted fitness: 0.035
+     fitness  0.94375   2970
+     fitness  0.94   1510
+     fitness  0.94   1541
+     fitness  0.93875   3013
+     ```
+
+  5. 为了缓解由于elitism的饱和现象，想到了将原本固定了的训练次数`training_epochs`改成随着神经进化代数`generation`增加而增加的线性训练次数，我设置每个个体的训练次数为 15 + `generation/5 ` ，(基本训练次数这里是15，也可调整为5、10、20等)，即第0代的个体训练15次，之后，每隔`5`代，这一代的新生个体的训练次数就会比上一代增加`1`次训练次数，使得，在达到elitism饱和现象之后，之后的个体可以借助比`elitism`更多的训练次数搅动当前的局面。运用了这种方法，目前最优测试准确率可以到`0.945`,最优平均 测试准确率可以到`0.9305`，比固定训练次数的方法有了明显提升。
+
+  6. 在前面举的例子中，第`1510`个个体的fitness达到`0.94`后，之后的`2970-1510=1460`个个体都很难撼动它的地位，但是借助线性增加的训练次数，第`2970`个个体搜索到了一个更好的成绩`0.94375`，搅动了原本的局面。当然，这也没有改变elitism逐渐饱和的现象，因为elitism的优胜者只会越来强，这也导致了局面越来越平稳， 导致后面的个体越来越难搅动局面。
+
+  7. 下面是固定训练次数`training_epochs=5、10、15`的最优`max`和平均`mean`测试准确率和`BP`的对比，画图时将`BP`的600代按着第一代和第二代取平均值，第三代和第四代取平均值的方式，使得600个数据点压缩成300个点，方便画图比较。
+
+     <center><img src="images\max-test-acc_vs_training_epochs.png" style="zoom: 50%"></center>
+
+
+
+
+  <center><img src= "images\mean-test-acc_vs_training_epochs.png" style="zoom: 50%" ></center>
+
+
+
+  8. 线性训练次数的收敛速度更快，最优值比固定训练次数好，这里没有画图说明。
+  9. 基于神经进化每一代中的每个个体的并行性和并发性，我尝试将神经进化代码进行了修改，由原来的单线程改成多线程(这里设置为4线程)，一定程度上加快了神经进化的速度。原本到了第100代的时候，这一代的训练时间需要470秒，且第91~100代(即最近10代)的每一代的训练的平均时间为520秒。到了150代，最近10代的平均时间达到了621秒，到187代，最近10代的平均时间达到679秒，增长很快。
+  10. 使用了多线程后，在104代，需要的训练时间为398秒，最近10代平均时间为394秒，有了明显的速度提升。到了192代，平均时间为560秒，到了230代，平均时间为627秒，这样比较，发现多线程的确能够提高神经进化的迭代速度。
+
 ### 第八周(12.24~12.31)
 　　第八周，主要进行代码调参、运行。代码部分增加了将网络参数写回染色体`genome`，对剪枝后的网络进行`retrain`。实验中用到的数据集是`mnist`中训练集和测试集各自的前`400`个样本。
 
 　　首先，再次呈现第七周时在`mnist`小数据集上运行中`CNN`卷积网络神经进化的的平均适应度`mean-fitness`。可以发现，无论是否对结点进行剪枝`prune`(不减枝`prune-prob=0`), 效果都很差。当然，在进化过程中使用了剪枝可以大大提高每一代`genration`迭代的速度，缺点是，在代数足够大的时候，此时网络每一层可能被削减至每一层只有少数几个结点，所以，需要控制好剪枝的概率，使得网络结点增加的概率大于剪枝的概率，避免网络结点锐减。
 
-<center><img src="images\mean-fit-wrt-prune-prob.png" style="zoom: 70%"></center>
+<center><img src="images\mean-fit-wrt-prune-prob.png" style="zoom: 50%"></center>
 
 　　我认为是因为卷积神经网络`CNN`的参数数量过多，神经进化这种方法对卷积层参数做出有益调整难度过大所导致的(实验中用的网络是4层卷积层和三层全连接层`fc`，卷积核大小是`3x3`)，所以，实验结果的`fitness`曲线一直在上下动荡，没有向好的方面发展的趋势。在实验中，人口数量`pop_size = 30`，但是发现个体很难继承到好的基因。
 
 　　因此，我尝试在网络进化过程中，加入`Back Propagation`，人口数量`pop_size=5`。每一代中，每个个体都会训练2个`epoches`。同时，每一代中，每个个体都有可能被剪枝`prune`(通过结点剪枝抑制网络结点数量的增加)，调整剪枝的阈值`prune_threshold`(0到1之间)，被剪枝的个体会多训练2个`epoches`作为对剪枝`prune`的`retrain` ,调整剪枝的阈值`prune_threshold`，得到如下每一代(100代)中平均适应度`mean-fit`的结果。
-<center><img src="images/mean-fit-wrt-prune-thre.png" style="zoom:100%"></center>
+<center><img src="images/mean-fit-wrt-prune-thre.png" style="zoom:50%"></center>
 
 　　可以看出，加入`BP`后，虽然人口数量从`30`削减至`5`, 但训练的速度和效果大幅度提高。对于上面的四种不同的剪枝概率，只需迭代`40`代，平均适应度都能达到`0.7`以上。同时，对应的最大适应度`max-fit`可以达到`0.8` (对比图如下) 。
 
 　　此外，当代数`generation`大于60后，适应度均出现较明显下滑，剪枝阈值`prune-threshold`越低，现象越严重，一方面是因为过拟合`over-fitting`，另一方面，是因为`prune-threshold`对网络结点的削减导致，例如，在`prune-threshold=0.2`时，剪枝概率过大(为`1-0.2 = 0.8`)，所以，随着代数增加，必然出现网络结点锐减的现象。
 
-<center><img src="images/max-fit-wrt-prune-thre.png" style="zoom:100%"></center>
+<center><img src="images/max-fit-wrt-prune-thre.png" style="zoom:50%"></center>
 
 　　将适应度`fitness`修改为测试集上的准确率，代数`generation=300`，重新运行代码, 并和普通后向传播`BP`进行`300`次训练的结果进行对比，得到最大适应度如下：
-<center><img src="images/max-test-fit-wrt-prune-thre-bp-400-0.png" style="zoom:100%"></center>  
+<center><img src="images/max-test-fit-wrt-prune-thre-bp-400-0.png" style="zoom:50%"></center>  
 
 　　为方便观察比较，将上面的结果按着`0.2`的`prune-threshold`为间隔分组对照。
-<center><img src="images/max-test-fit-wrt-prune-thre-bp-400-1.png" style="zoom:100%"></center>  
+<center><img src="images/max-test-fit-wrt-prune-thre-bp-400-1.png" style="zoom:50%"></center>  
 
-<center><img src="images/max-test-fit-wrt-prune-thre-bp-400-2.png" style="zoom:100%"></center>  
+<center><img src="images/max-test-fit-wrt-prune-thre-bp-400-2.png" style="zoom:50%"></center>  
+
 　　平均适应度结果如下：
-<center><img src="images/mean-test-fit-wrt-prune-thre-bp-400-0.png" style="zoom:100%"></center>  
+<center><img src="images/mean-test-fit-wrt-prune-thre-bp-400-0.png" style="zoom:50%"></center>  
 
 　　为方便观察比较，将上面的结果按着`0.2`的`prune-threshold`为间隔分组对照。
-<center><img src="images/mean-test-fit-wrt-prune-thre-bp-400-1.png" style="zoom:100%"></center>  
+<center><img src="images/mean-test-fit-wrt-prune-thre-bp-400-1.png" style="zoom:50%"></center>  
 
-<center><img src="images/mean-test-fit-wrt-prune-thre-bp-400-2.png" style="zoom:100%"></center>  
+<center><img src="images/mean-test-fit-wrt-prune-thre-bp-400-2.png" style="zoom:50%"></center>  
 
 ### 第七周(12.16~12.23)
 
@@ -535,16 +588,16 @@ def connect_partial(self, config):
 
 16. 在`mnist`数据集上，进行了简单的测试。生成的网络如下：
 
-      <center><img src="images\Digraph2.gv.svg" style="zoom: 100%"></center>
+      <center><img src="images\Digraph2.gv.svg" style="zoom: 50%"></center>
 
 17. 对生成的网络进行按结点剪枝(减去`50%`)，得到的剪枝后的网络如下。同时，将剪枝后的网络写回去染色体`genome`中去，再用`genome`生成一个新的网络，一方面验证新生成的网络的性能，也说明了从染色体到网络之间的可逆性。
 
-    <center><img src="images\Digraph2-prune.gv.svg" style="zoom: 70%"></center>
+    <center><img src="images\Digraph2-prune.gv.svg" style="zoom: 50%"></center>
 18. 在`mnist`上截取的小数据集上，进行了测试，进化`600`代，每一代的每一个个体都有一定的概率被剪枝(根据结点权重weight的`L2-norm`选择删去的结点)，运行结果(每一代`generation`的最大适应度`best-fitness` 和 平均适应度 `mean-fitness`)如下：
-<center><img src="images\mnist-fitness-600.png" style="zoom: 70%"></center>
+<center><img src="images\mnist-fitness-600.png" style="zoom: 50%"></center>
 
 19. 与进化过程中不减枝`prune-prob=0`的平均适应度的对比如下。
-<center><img src="images\mean-fit-wrt-prune-prob.png" style="zoom: 70%"></center>
+<center><img src="images\mean-fit-wrt-prune-prob.png" style="zoom: 50%"></center>
 
 ### 第五六周(12.01~12.15)
 
@@ -560,7 +613,7 @@ def connect_partial(self, config):
 
 　　所以，可以直接用`BatchNorm`层自带的`scaling factor`(一般用$\gamma$ 表示) 来衡量通道`channel` 的重要性，这样做，不会引入新的参数。
 
-<center><img src="images/channel_selection.png" style="zoom: 70%"></center>
+<center><img src="images/channel_selection.png" style="zoom: 50%"></center>
 
 
 
@@ -637,7 +690,7 @@ ResNet(
 
 　　`resnet`中，有另一种基本模块`Bottleneck`，利用`1x1` 的卷积核来改变通道数，用于减少参数数量。
 
-<center><img src="images/bottleneck.png" style="zoom: 80%"> </center>
+<center><img src="images/bottleneck.png" style="zoom: 50%"> </center>
 
 
 
@@ -696,7 +749,7 @@ Bottleneck(
 
 　　图中的$n_{i+1}*n_{i+2}$ 的矩阵是权重矩阵$W_{L+1}$，每一个小矩形都是一个$(kernel\_size, kernel\_size  )$的卷积核`kernel`。
 
-<center><img src="images\卷积层剪枝.png" style="zoom: 50%"> </center>
+<center><img src="images\卷积层剪枝.png" style="zoom: 30%"> </center>
 
   3. 每减去一张特征图，即减少了一个通道`channel`，会对当前卷积层的权重矩阵$W_L$和下一层卷积层的权重矩阵$W_{L+1}$ 减少一行或一列，这样使得剪枝后的网络还是处于密集连接的状态。
 
