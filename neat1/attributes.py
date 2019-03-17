@@ -264,8 +264,8 @@ class ListAttribute(BaseAttribute):
         # TODO: 修改
         # for every in channels of this kernel        
         for in_channel in range(len(value)):
-            if random() < 0.5:
-                continue
+#            if random() < 0.5:
+#                continue
             for i in range(config.kernal_size):
                 r = random()
                 if r < mutate_rate:

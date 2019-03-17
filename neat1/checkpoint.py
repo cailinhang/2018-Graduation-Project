@@ -10,7 +10,7 @@ try:
 except ImportError:
     import pickle  # pylint: disable=import-error
 
-from neat1.population import Population
+#from neat1.population import Population
 from neat1.reporting import BaseReporter
 
 
@@ -21,7 +21,7 @@ class Checkpointer(BaseReporter):
     """
 
     def __init__(self, generation_interval=100, time_interval_seconds=300,
-                 filename_prefix='neat-checkpoint-'):
+                 filename_prefix='./checkpoints/neat-checkpoint-'):
         """
         Saves the current state (at the end of a generation) every ``generation_interval`` generations or
         ``time_interval_seconds``, whichever happens first.
@@ -76,4 +76,5 @@ class Checkpointer(BaseReporter):
         with gzip.open(filename) as f:
             generation, config, population, species_set, rndstate = pickle.load(f)
             random.setstate(rndstate)
-            return Population(config, (population, species_set, generation))
+            #return Population(config, (population, species_set, generation))
+            return (config, (population, species_set, generation))

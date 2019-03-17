@@ -102,7 +102,8 @@ class BaseGene(object):
                     setattr(new_gene, a.name, getattr(gene2, a.name))
 
 # @@@@@@@@@@ andrew begin
-
+                    
+            # Newly Modified, originally, random()< 0.2                    
             if (random() < 0.2):
                 if ((a.name == 'weight') or (a.name == 'bias')):
                     lamda = random()
@@ -110,24 +111,42 @@ class BaseGene(object):
 #                        lamda = 1 - lamda
                     tmpa = getattr(self, a.name)
                     tmpb = getattr(gene2, a.name)
-                    tmp = tmpa * lamda + tmpb * (1 - lamda)
+                    # Newly Modified
+                    if lamda < 0.05:
+                        tmp = (1 +lamda) * tmpa
+                    elif lamda < 0.1:
+                        tmp = (0.75 + lamda) * tmpb                        
+                    else:                        
+                        tmp = tmpa * lamda + tmpb * (1 - lamda)
                     setattr(new_gene, a.name, tmp)
                 elif (a.name == 'kernal'):
 #                    pass
                      for i in range(len(self.in_nodes)):
-                         if random() < 0.5:
-                             continue
+                         # Newly Modified
+#                         if random() < 0.5:
+#                             continue
                          for j in range(len(gene2.in_nodes)):
                              if gene2.in_nodes[j] == self.in_nodes[i]:
                                  
                                  for k in range(len(self.kernal[0])):
                                      
                                      lamda = random()
+                                     # Amplify  
+                                     #TODO: Note that the boundary of kernal
+                                     # is not limited
+                                     if lamda < 0.05:
+                                         new_gene.kernal[i][k] = \
+                                         (1 + lamda)* self.kernal[i][k]
+                                     elif lamda < 0.1:
+                                         new_gene.kernal[i][k] = \
+                                         (0.75 + lamda)* gene2.kernal[j][k]
+                                         
 #                                     if lamda < 0.5:
 #                                         lamda = 1 - lamda
-                                     new_gene.kernal[i][k] = \
-                                         lamda * self.kernal[i][k] + \
-                                         (1 - lamda) * gene2.kernal[j][k]
+                                     else:                                         
+                                         new_gene.kernal[i][k] = \
+                                             lamda * self.kernal[i][k] + \
+                                             (1 - lamda) * gene2.kernal[j][k]
                     # TODO: 修改                    
 #                    for in_channel in range(len(new_gene.kernal)):
 #                        # Now, len(kernel[0]) is kernel_size= 9

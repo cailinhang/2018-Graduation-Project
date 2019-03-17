@@ -30,11 +30,11 @@ class DefaultReproduction(DefaultClassConfig):
                                    ConfigParameter('survival_threshold', float, 0.2),
                                    ConfigParameter('min_species_size', int, 2)])
 
-    def __init__(self, config, reporters, stagnation):
+    def __init__(self, config, reporters, stagnation, start_idx=1):
         # pylint: disable=super-init-not-called
         self.reproduction_config = config
         self.reporters = reporters
-        self.genome_indexer = count(1)
+        self.genome_indexer = count(start_idx)
         self.stagnation = stagnation
         self.ancestors = {}
 
@@ -160,7 +160,7 @@ class DefaultReproduction(DefaultClassConfig):
                 # i是个体的id, m 是 个体
                 for i, m in old_members[:self.reproduction_config.elitism]:
                     new_population[i] = m
-                    print('\nfitness ', m.fitness, ' ', i)
+                    print('fitness ', m.fitness, ' ', i)
       
                     spawn -= 1
 

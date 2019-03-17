@@ -4,7 +4,7 @@ from __future__ import print_function
 from neat1.reporting import ReporterSet
 from neat1.math_util import mean
 from neat1.six_util import iteritems, itervalues
-
+from neat1.checkpoint import Checkpointer
 
 class CompleteExtinctionException(Exception):
     pass
@@ -21,10 +21,16 @@ class Population(object):
     """
 
     def __init__(self, config, initial_state=None):
+        
+        self.checkpointer = Checkpointer(generation_interval=1,
+                                         time_interval_seconds=None,
+                                         filename_prefix='./checkpoints/neat-checkpoint-')
         self.reporters = ReporterSet()
         self.config = config
         stagnation = config.stagnation_type(config.stagnation_config, self.reporters)
-        self.reproduction = config.reproduction_type(config.reproduction_config,
+        
+        if initial_state is None:
+            self.reproduction = config.reproduction_type(config.reproduction_config,
                                                      self.reporters,
                                                      stagnation)
         if config.fitness_criterion == 'max':
@@ -45,10 +51,19 @@ class Population(object):
             #print('population in_nodes ',self.population.nodes[0].in_nodes)
             self.species = config.species_set_type(config.species_set_config, self.reporters)
             self.generation = 0
-            self.species.speciate(config, self.population, self.generation)
+            self.species.speciate(config, self.population, self.generation)            
         else:
             self.population, self.species, self.generation = initial_state
-
+            genomes = list(iteritems(self.population))            
+            start_idx=0
+            for genome_id, genome in genomes:
+                if genome_id > start_idx:
+                    start_idx = genome_id                     
+            self.reproduction = config.reproduction_type(config.reproduction_config,
+                                                     self.reporters,
+                                                     stagnation, start_idx + 1)
+             
+                 
         self.best_genome = []
 
     def add_reporter(self, reporter):
@@ -80,10 +95,50 @@ class Population(object):
         if self.config.no_fitness_termination and (n is None):
             raise RuntimeError("Cannot have no generational limit with no fitness termination")
 
+        if self.generation > 0: # start from saved_state 
+            
+            self.reporters.start_generation(self.generation)
+            
+            # Gather and report statistics.
+            best = None
+            
+            for g in itervalues(self.population):        
+                if best is None or g.fitness > best.fitness:
+                    best = g
+            self.reporters.post_evaluate(self.config, self.population, self.species, best)
+
+            # Track the best genome ever seen.
+            self.best_genome.append((best, best.fitness))
+            
+            # Create the next generation from the current generation.
+            self.population = self.reproduction.reproduce(self.config, self.species,
+                                                          self.config.pop_size, self.generation)
+                
+            # Check for complete extinction.
+            if not self.species.species:
+                self.reporters.complete_extinction()
+
+                # If requested by the user, create a completely new population,
+                # otherwise raise an exception.
+                if self.config.reset_on_extinction:
+                    self.population = self.reproduction.create_new(self.config.genome_type,
+                                                                   self.config.genome_config,
+                                                                   self.config.pop_size)
+                else:
+                    raise CompleteExtinctionException()
+
+            # Divide the new population into species.
+            self.species.speciate(self.config, self.population, self.generation)
+
+            self.reporters.end_generation(self.config, self.population, self.species)
+                               
+            self.generation += 1    
+            
+            
         k = 0
         while n is None or k < n:
             k += 1
-
+            self.checkpointer.start_generation(self.generation)                
             self.reporters.start_generation(self.generation)
 
             # Evaluate all genomes using the user-provided function.
@@ -91,7 +146,12 @@ class Population(object):
 
             # Gather and report statistics.
             best = None
+            #idxx = 0
             for g in itervalues(self.population):
+                #idxx += 1
+                #print(g.fitness)
+                #if g.fitness is None:
+                    #print(idxx)
                 if best is None or g.fitness > best.fitness:
                     best = g
             self.reporters.post_evaluate(self.config, self.population, self.species, best)
@@ -109,6 +169,12 @@ class Population(object):
                 if fv >= self.config.fitness_threshold:
                     self.reporters.found_solution(self.config, self.generation, best)
                     break
+            #print(self.generation, self.checkpointer.last_generation_checkpoint, self.checkpointer.generation_interval )                        
+            if self.generation - self.checkpointer.last_generation_checkpoint >= \
+                self.checkpointer.generation_interval:
+                print('save checkpoint')
+                self.checkpointer.end_generation(self.config, self.population, self.species)
+                            
 
             # Create the next generation from the current generation.
             self.population = self.reproduction.reproduce(self.config, self.species,
@@ -131,9 +197,10 @@ class Population(object):
             self.species.speciate(self.config, self.population, self.generation)
 
             self.reporters.end_generation(self.config, self.population, self.species)
-
+            
+                   
             self.generation += 1
-
+                
         if self.config.no_fitness_termination:
             self.reporters.found_solution(self.config, self.generation, self.best_genome[-1][0])
                     

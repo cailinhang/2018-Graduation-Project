@@ -1,14 +1,10 @@
 """Handles genomes (individuals in the population)."""
 from __future__ import division, print_function
 
-
 from itertools import count
 from random import choice, random, shuffle, randint
-#import numpy as np
-from numpy import random
-from numpy.random import random, randn, rand
-#import numpy.random.randn as randn
-import sys
+
+from numpy.random import randn, rand
 
 from neat1.activations import ActivationFunctionSet
 from neat1.aggregations import AggregationFunctionSet
