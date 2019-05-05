@@ -35,7 +35,7 @@ class Net(nn.Module):
             #x = nn.BatchNorm2d(num_features=x.shape[1])(x)
             
             x = F.relu(x)
-            x = F.max_pool2d(x, 2)
+            x = F.max_pool2d(x, 3)
         # 输出x的长宽 (4 x  4) , 第一层fc层需要flatten成 
         # num_final_cnn_channels * (4 x 4) = num_final_cnn_channels * 16          
         
@@ -48,13 +48,34 @@ class Net(nn.Module):
             # start index =  max_index +1 = 2*num_cnn_layer
             x = F.relu(l[i + 0](x))
         #bn = nn.BatchNorm1d(num_features=10)
-        x = l[-1](x) 
-        #print('----')
-        #print(x)
-        #x = bn(x)
-        #print(x)
+        x = l[-1](x)                 
+        #x = bn(x)        
         #print(F.softmax(x, dim=1))
         #return F.softmax(x, dim=1)
+        return (x)
+    
+    def forward_with_dropout(self, x):
+        l = list(self.children())  
+        dropout = nn.Dropout(p=0.25)
+
+        for i in range(self.num_cnn_layer):            
+            x = l[1 * i](x)
+            #x = nn.BatchNorm2d(num_features=x.shape[1])(x)            
+            x = F.relu(x)
+            x = F.max_pool2d(x, 2)                
+            
+        #x = nn.AvgPool2d(2)(x)            
+        x = x.view(-1, x.shape[1]*x.shape[2]*x.shape[3])
+            
+        # final fc-layer  is not activated            
+        for i in range(self.num_cnn_layer, self.num_layer - 1):
+            x = dropout(x)        
+            x = F.relu(l[i + 0](x))
+        
+        x = dropout(x)            
+        #bn = nn.BatchNorm1d(num_features=10)
+        x = l[-1](x) 
+        
         return (x)
        
     def compute_in_out_degree(self): # compute in_degree & out_degree

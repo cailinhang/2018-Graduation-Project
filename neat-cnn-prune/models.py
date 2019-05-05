@@ -27,9 +27,11 @@ class MLP(nn.Module):
 
     
 class ConvNet(nn.Module):
-    def __init__(self,cfg=None, num_cnn_layer=None):
+    def __init__(self,cfg=None, num_cnn_layer=None, part=1):
         super(ConvNet, self).__init__()
         
+        self.part = int(part) # add 
+        self.part = 1 #　普通卷积
         if cfg == None or num_cnn_layer == None:
             cfg = [1, 7, 11, 12, 10, 8, 7, 10]
             self.cfg = cfg.copy()
@@ -41,11 +43,18 @@ class ConvNet(nn.Module):
         layer_idx = 0
         for i in range( self.num_cnn_layer ):
             
-            self.add_module(str(layer_idx), MaskedConv2d(in_channels = cfg[i], out_channels = cfg[i+1], kernel_size = 3, padding = 1))            
+            if i % self.part == 0:
+                self.add_module(str(layer_idx), MaskedConv2d(in_channels = cfg[i], out_channels = cfg[i+1], kernel_size = 3, padding = 1))            
+            else:
+                self.add_module(str(layer_idx), MaskedConv2d(in_channels = cfg[i], out_channels = cfg[i+1], kernel_size = 1, padding = 0))   
+            
             layer_idx += 1
+            
             self.add_module(str(layer_idx), nn.ReLU(inplace=True))
             layer_idx += 1
-            self.add_module(str(layer_idx), nn.MaxPool2d(2))
+            
+            self.add_module(str(layer_idx), nn.MaxPool2d(3))
+                
             layer_idx += 1
         
         for i in range( len(cfg)-1-self.num_cnn_layer-1 ):
@@ -60,6 +69,8 @@ class ConvNet(nn.Module):
         
     def forward(self, x):
         l = list(self.children())
+#        for i in range(len(l)):
+#            print(i, ' ', l[i])
         out = x
         for i in range( self.num_cnn_layer ):
             
@@ -75,6 +86,31 @@ class ConvNet(nn.Module):
             out = l[2*i +  self.num_cnn_layer*3](out)            
             out = l[2*i + 1 +  self.num_cnn_layer*3 ](out)
         
+        out = l[-1](out)
+
+        return out
+    
+    def forward_with_dropout(self, x):
+        l = list(self.children())
+        dropout = nn.Dropout(p=0.25)
+        
+        out = x
+        for i in range( self.num_cnn_layer ):
+            
+            out = l[i*3 + 0 ](out)
+            out = l[i*3 + 1 ](out)
+            out = l[i*3 + 2 ](out)
+                                            
+        #print('conv output shape ', out.shape)
+        out = out.view(out.size(0), -1)
+        #print('reshape shape ',out.shape)
+                    
+        for i in range( len(self.cfg)-1-self.num_cnn_layer-1 ):
+            out = dropout(out)       
+            out = l[2*i +  self.num_cnn_layer*3](out)            
+            out = l[2*i + 1 +  self.num_cnn_layer*3 ](out)
+        
+        out = dropout(out)       
         out = l[-1](out)
 
         return out

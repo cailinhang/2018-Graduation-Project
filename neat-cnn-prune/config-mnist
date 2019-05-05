@@ -2,9 +2,10 @@
 
 [NEAT]
 fitness_criterion     = max
-fitness_threshold     = 0.8
-pop_size              = 10
+fitness_threshold     = 1.0
+pop_size              = 20
 reset_on_extinction   = False
+# part_size             = 2
 
 [DefaultGenome]
 # node activation options
@@ -42,7 +43,7 @@ feed_forward            = True
 initial_connection      = partial 0.8
 
 # node add/remove rates
-node_add_prob           = 0.5
+node_add_prob           = 0.2
 node_delete_prob        = 0.0
 
 # network parameters
@@ -74,28 +75,37 @@ kernal_init_mean        = 0.0
 kernal_init_stdev       = 0.5
 kernal_max_value        = 5.0
 kernal_min_value        = -5.0
-kernal_mutate_power     = 0.3
-kernal_mutate_rate      = 0.3
-kernal_replace_rate     = 0.2
+kernal_mutate_power     = 0.005
+kernal_mutate_rate      = 0.05
+kernal_replace_rate     = 0.01
 kernal_size             = 9
 input_channels          = 1
+kernal1_init_mean        = 0.0
+kernal1_init_stdev       = 0.5
+kernal1_max_value        = 5.0
+kernal1_min_value        = -5.0
+kernal1_mutate_power     = 0.005
+kernal1_mutate_rate      = 0.05
+kernal1_replace_rate     = 0.01
+kernal1_size             = 1
+part_size             = 2
 
 # layer information
 # num_first_fc_layer_node can be set to 0, if the num is not fixed
 num_layer               = 7
-num_cnn_layer           = 4
+num_cnn_layer           = 3
 num_first_fc_layer_node = 0
 
 [DefaultSpeciesSet]
-compatibility_threshold = 3.8
+compatibility_threshold = 38
 
 [DefaultStagnation]
 species_fitness_func = max
 max_stagnation       = 20
-species_elitism      = 2
+species_elitism      = 4
 
 [DefaultReproduction]
-elitism            = 2
-survival_threshold = 0.2
+elitism            = 4
+survival_threshold = 0.5
 
 #crossover_rate ?

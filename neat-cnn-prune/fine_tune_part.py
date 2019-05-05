@@ -4,7 +4,7 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 
 from pruning.utils import train, test
-from models import ConvNet
+from models_part import ConvNet
 import numpy as np
 import os
 
@@ -70,7 +70,9 @@ def retrain(state_dict, part=1, num_epochs=5):
     assert num_cnn_layer + num_fc_layer == len(cfg) - 1
     
     net = ConvNet(cfg, num_cnn_layer, part)
-
+#    l = list(net.children())
+#    for i in range(len(l)):
+#        print(i,' ', l[i] )
     masks = []
 
     for i, p in enumerate(net.parameters()):
@@ -108,7 +110,8 @@ def retrain(state_dict, part=1, num_epochs=5):
                     if abs( value_this_layer[j][k] ) < 1e-4:
                     
                         masks[-1][j][k] = 0.                                        
-                        
+#    for i in range(len(masks)):
+#        print(len(masks[i]), ' ' , len(masks[i][0]))
     net.set_masks(masks)           
     
     ## Retraining    

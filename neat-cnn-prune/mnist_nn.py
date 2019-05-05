@@ -42,7 +42,7 @@ torch_batch_size = 5
 trainset = datasets.MNIST(root='../../../../../PyTorch/data/',train=True, download=False, 
     transform=transforms.ToTensor())
 
-trainset.train_data = trainset.train_data[:400]
+trainset.train_data = trainset.train_data[:4000]
 
 trainloader = torch.utils.data.DataLoader(trainset, 
     batch_size=torch_batch_size, shuffle=True)
@@ -50,32 +50,43 @@ trainloader = torch.utils.data.DataLoader(trainset,
 testset = datasets.MNIST(root='../../../../../PyTorch/data/', train=False, download=False, 
     transform=transforms.ToTensor())
 
-testset.test_data = testset.test_data[:400]
+testset.test_data = testset.test_data[:4000]
 
 testloader = torch.utils.data.DataLoader(testset, 
 batch_size=torch_batch_size, shuffle=True)
 
+has_evaled = {}
+cur_generation = 0
 eps = 1e-5
 def eval_genomes(genomes, config):
 
     j = 0
+    global cur_generation
+    cur_generation += 1
     for genome_id, genome in genomes:
         j += 1
+        if has_evaled.__contains__(genome_id):
+            print('{0}: {1:3.3f} {2}'.format(j,genome.fitness,genome_id))
+            continue
+        else:
+            has_evaled[genome_id] = 1
 #        if genome.nodes.__contains__(301):
 #            print('genome in_nodes ', genome.nodes[301].in_nodes)
 #        else: continue             
         #evaluate_batch_size = 1000
-        evaluate_batch_size = 80
+        #evaluate_batch_size = 80*12 * 2
+        evaluate_batch_size = 400 * 2
         
         hit_count = 0
         #start = int(random() * (len(trainloader) - evaluate_batch_size * torch_batch_size))
         start = 0
         i = 0
+        #"""
         state = True
 
         net = evaluate_torch.Net(config, genome)        
         
-        if random() > 0.2:
+        if random() > 1.0:
             print('prune')
             if random() > 0.5:
                 del_node, del_connects, state = net.prune_one_filter()
@@ -83,7 +94,7 @@ def eval_genomes(genomes, config):
             else:
                 del_node, del_connects, state = net.prune_fc_weight()
         else: state = False                                        
-        state_dict = fine_tune.retrain(net.state_dict(), 2 + 2*int(state))
+        state_dict = fine_tune.retrain(net.state_dict(), 2*int(state) + 20 + int(cur_generation/5) )
         
         state_key = [ k for k,v in state_dict.items()]
          
@@ -100,8 +111,8 @@ def eval_genomes(genomes, config):
         net.write_back_parameters(genome)
     
     #fine_tune.retrain(net.state_dict(), 0)
-        
-        for num, data in enumerate(trainloader, start):
+        #"""
+        for num, data in enumerate(testloader, start):
             i += 1
             # 得到输入数据
             inputs, labels = data
@@ -182,13 +193,17 @@ config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
 #best.close()
 
 # Create the population, which is the top-level object for a NEAT run.
+checkpoint = neat.Checkpointer()
+#config1, init_state = checkpoint.restore_checkpoint('checkpoints/neat-checkpoint-356')
+
 p = neat.Population(config)
+#p = neat.Population(config1, init_state)
 
 # Add a stdout reporter to show progress in the terminal.
 p.add_reporter(neat.StdOutReporter(False))
 
 # Run until a solution is found.
-winner_list = p.run(eval_genomes,100)
+winner_list = p.run(eval_genomes,300)
 winner = winner_list[0]
 
 for i in range(len(winner_list)):

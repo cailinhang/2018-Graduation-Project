@@ -8,6 +8,9 @@ from models import ConvNet
 import numpy as np
 import os
 
+import matplotlib.pyplot as plt
+import csv
+
 # Hyper Parameters
 #param = {    
 #    'batch_size': 4, 
@@ -17,12 +20,12 @@ import os
 #    'weight_decay': 5e-4,
 #}
 
-def load_dataset(batch_size=32, test_batch_size=100):    
+def load_dataset(batch_size=4, test_batch_size=50):    
     # Data loaders
     train_dataset = datasets.MNIST(root='../../../../../PyTorch/data/',train=True, download=False, 
         transform=transforms.ToTensor())
     
-    train_dataset.train_data = train_dataset.train_data[:4000]
+    train_dataset.train_data = train_dataset.train_data[:6400]
     
     loader_train = torch.utils.data.DataLoader(train_dataset, 
         batch_size=batch_size, shuffle=False)
@@ -30,7 +33,7 @@ def load_dataset(batch_size=32, test_batch_size=100):
     test_dataset = datasets.MNIST(root='../../../../../PyTorch/data/', train=False, download=False, 
         transform=transforms.ToTensor())
     
-    test_dataset.test_data = test_dataset.test_data[:100] 
+    test_dataset.test_data = test_dataset.test_data[:6400] 
     
     loader_test = torch.utils.data.DataLoader(test_dataset, 
     batch_size=test_batch_size, shuffle=False)
@@ -38,7 +41,7 @@ def load_dataset(batch_size=32, test_batch_size=100):
     return loader_train, loader_test
 
 
-def retrain(state_dict, part=1, num_epochs=5):
+def baseline_fitness(state_dict,num_epochs=600):
     
     # Hyper Parameters
     param = {    
@@ -54,8 +57,7 @@ def retrain(state_dict, part=1, num_epochs=5):
     num_fc_layer = sum( [ int(len(v.size())==2) for d, v in state_dict.items() ] ) 
     
     state_key = [ k for k,v in state_dict.items()]
-    
-    
+        
     cfg = []
     first = True
     for d, v in state_dict.items():
@@ -69,47 +71,48 @@ def retrain(state_dict, part=1, num_epochs=5):
 
     assert num_cnn_layer + num_fc_layer == len(cfg) - 1
     
-    net = ConvNet(cfg, num_cnn_layer, part)
-
-    masks = []
+    net = ConvNet(cfg, num_cnn_layer)
+         
+#    masks = []
 
     for i, p in enumerate(net.parameters()):
         
         p.data = state_dict[ state_key[i] ]
         
         if len(p.data.size()) == 4:
+            pass
+            #p_np = p.data.cpu().numpy()
             
-            p_np = p.data.cpu().numpy()
-            
-            masks.append(np.ones(p_np.shape).astype('float32'))
+            #masks.append(np.ones(p_np.shape).astype('float32'))
                     
-            value_this_layer = np.abs(p_np).sum(axis=(2,3))        
+            #value_this_layer = np.abs(p_np).sum(axis=(2,3))        
                                     
-            for j in range(len(value_this_layer)):
-                
-                for k in range(len(value_this_layer[0])):
-                    
-                    if abs( value_this_layer[j][k] ) < 1e-4:
-                    
-                        masks[-1][j][k] = 0.
+#            for j in range(len(value_this_layer)):
+#                
+#                for k in range(len(value_this_layer[0])):
+#                    
+#                    if abs( value_this_layer[j][k] ) < 1e-4:
+#                    
+#                        masks[-1][j][k] = 0.
                         
         elif len(p.data.size()) == 2:
+            pass
+            #p_np = p.data.cpu().numpy()
             
-            p_np = p.data.cpu().numpy()
-            
-            masks.append(np.ones(p_np.shape).astype('float32'))
+            #masks.append(np.ones(p_np.shape).astype('float32'))
                     
-            value_this_layer = np.abs(p_np)   
+            #value_this_layer = np.abs(p_np)   
                                     
-            for j in range(len(value_this_layer)):
-                
-                for k in range(len(value_this_layer[0])):
-                    
-                    if abs( value_this_layer[j][k] ) < 1e-4:
-                    
-                        masks[-1][j][k] = 0.                                        
+#            for j in range(len(value_this_layer)):
+#                
+#                for k in range(len(value_this_layer[0])):
+#                    
+#                    if abs( value_this_layer[j][k] ) < 1e-4:
+#                    
+#                        masks[-1][j][k] = 0.                                        
                         
-    net.set_masks(masks)           
+    #net.set_masks(masks)   
+    
     
     ## Retraining    
     loader_train, loader_test = load_dataset()
@@ -120,20 +123,38 @@ def retrain(state_dict, part=1, num_epochs=5):
     #if num_epochs > 0:
     #    test(net, loader_test)
     
-    train(net, criterion, optimizer, param, loader_train)
+    #train(net, criterion, optimizer, param, loader_train)
     
-    for i, p in enumerate(net.parameters()):
+    test_acc_list = []
+    
+    for t in range(num_epochs ):
+    
+        param['num_epochs'] = 10
+        train(net, criterion, optimizer, param, loader_train)
+    
+        #print("--- After training ---")
         
-        state_dict[ state_key[i] ] = p.data
-        #print(p.data == state_dict[ state_key[i] ])
+        test_acc_list.append(test(net, loader_test))
+        
+    plt.plot(test_acc_list)
     
-    #print("--- After retraining ---")
-    #test(net, loader_test)
+    with open('baseline_result.csv','a',newline='') as csvfile:
+        writer  = csv.writer(csvfile)
+        for row in test_acc_list:
+            writer.writerow([row])
     
-    
-    #return net.state_dict()
-    return state_dict
-    
+
+
+#loader_train, loader_test = load_dataset()
+
+# Hyper Parameters
+#param = {    
+#    'batch_size': 4, 
+#    'test_batch_size': 50,
+#    'num_epochs': 300,
+#    'learning_rate': 0.001,
+#    'weight_decay': 5e-4,
+#}
 
 ## Retraining    
 #loader_train, loader_test = load_dataset()
@@ -162,3 +183,7 @@ def retrain(state_dict, part=1, num_epochs=5):
 #save = './models'
 #torch.save({'state_dict': net.state_dict()}, os.path.join('./models', '1-retrain.pth.tar'))
 #
+model = './models/baseline-train-600.pth.tar'
+model = './models/1.pth.tar'
+checkpoint = torch.load(model)
+baseline_fitness(checkpoint['state_dict'], 100)
