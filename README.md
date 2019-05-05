@@ -5,6 +5,7 @@
 ---
 - [项目计划](#项目计划)
 - [工作总结](#工作总结) 
+  - [update(19.05.05)](#update190505) 
   - [update(19.03.12)](#update190312) 
   - [第八周(12.24~12.31)](#第八周12241231) 
   - [第七周(12.16~12.23)](#第七周12161223)
@@ -34,6 +35,29 @@
 
 ## 工作总结
 
+### update(19.05.05)
+
+　　代码功能说明如下:
+  
+  neat1: 3层3x3卷积核的NEAT
+  
+  neat2: 3层(1x1卷积+3x3分组卷积)的NEAT
+  
+  neat3: 3层(3x3卷积+1x1卷积)的NEAT
+  
+  pruning: baseline和fine_tune网络层layer结构定义
+  
+  baseline: 给出网络结构的baseline结果				
+  
+  models*: CNN结构定义		
+	
+  evaluate_torch*: 由NEAT定义的染色体生成CNN
+	  --parallel: 并行化 --part: neat3定义的卷积方式 --prune: 网络剪枝
+	
+  fine_tune*: 对生成的CNN网络进行BP训练	
+  
+  mnist_nn*: 主程序,载入数据集,神经进化
+  
 ### update(19.03.12)
 
   1. 调整种群大小 population = 20， 种群精英个数(即每一代中存活到下一代的优秀个体数量)elitism = 4。为简单起见，去掉种群分化 speciation， 使得所有个体都面临一样的竞争关系，不会因为所属的物种species数量稀少而一直存活。
