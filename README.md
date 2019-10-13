@@ -23,7 +23,7 @@
 
 　　所以，可以直接用`BatchNorm`层自带的`scaling factor`(一般用$\gamma$ 表示) 来衡量通道`channel` 的重要性，这样做，不会引入新的参数。
 
-<center><img src="images/channel_selection.png" style="zoom: 50%"></center>
+<center><img src="images/channel_selection.png" style="zoom: 20%"></center>
 
 
 
@@ -100,7 +100,7 @@ ResNet(
 
 　　`resnet`中，有另一种基本模块`Bottleneck`，利用`1x1` 的卷积核来改变通道数，用于减少参数数量。
 
-<center><img src="images/bottleneck.png" style="zoom: 50%"> </center>
+<center><img src="images/bottleneck.png" style="zoom: 20%"> </center>
 
 
 
@@ -159,7 +159,7 @@ Bottleneck(
 
 　　图中的$n_{i+1}*n_{i+2}$ 的矩阵是权重矩阵$W_{L+1}$，每一个小矩形都是一个$(kernel\_size, kernel\_size  )$的卷积核`kernel`。
 
-<center><img src="images\卷积层剪枝.png" style="zoom: 30%"> </center>
+<center><img src="images\卷积层剪枝.png" style="zoom: 20%"> </center>
 
   3. 每减去一张特征图，即减少了一个通道`channel`，会对当前卷积层的权重矩阵$W_L$和下一层卷积层的权重矩阵$W_{L+1}$ 减少一行或一列，这样使得剪枝后的网络还是处于密集连接的状态。
 
